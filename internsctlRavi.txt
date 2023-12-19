@@ -1,0 +1,153 @@
+#!/bin/bash
+
+# Define the version number
+VERSION="v0.1.0"
+
+# Function to display the manual page
+function display_manual {
+    cat <<EOF
+internsctl(1)                          User Commands                         internsctl(1)
+
+NAME
+       internsctl - Custom command for intern operations
+
+SYNOPSIS
+       internsctl [OPTIONS] [ARGS]
+
+DESCRIPTION
+       internsctl is a custom Linux command for intern operations.
+
+OPTIONS
+       --help     Display help and usage information.
+
+       --version  Display the version of internsctl.
+
+       cpu getinfo   Get CPU information (similar to lscpu command).
+
+       memory getinfo   Get memory information (similar to free command).
+
+       user create    Create a new user with the specified username.
+
+       user list      List all regular users on the server.
+
+       user list --sudo-only   List all users with sudo permissions.
+
+EXAMPLES
+       internsctl cpu getinfo
+           Get CPU information.
+
+       internsctl memory getinfo
+           Get memory information.
+
+       internsctl user create john_doe
+           Create a new user with the username john_doe.
+
+       internsctl user list
+           List all regular users.
+
+       internsctl user list --sudo-only
+           List all users with sudo permissions.
+
+AUTHOR
+       Ravi Pratap Shukla
+
+VERSION
+       $VERSION
+
+EOF
+}
+
+# Function to display help information
+function display_help {
+    echo "Usage: internsctl [OPTIONS] [ARGS]"
+    echo "  --help                  Display help and usage information."
+    echo "  --version               Display the version of internsctl."
+    echo "  cpu getinfo             Get CPU information (similar to lscpu command)."
+    echo "  memory getinfo          Get memory information (similar to free command)."
+    echo "  user create <username>  Create a new user with the specified username."
+    echo "  user list               List all regular users on the server."
+    echo "  user list --sudo-only   List all users with sudo permissions."
+    # Add more help information here
+}
+
+# Function to create a new user
+function create_user {
+    if [ -z "$1" ]; then
+        echo "Error: Username not provided. Usage: internsctl user create <username>"
+        exit 1
+    fi
+
+    sudo useradd -m "$1"
+    sudo passwd "$1"
+}
+
+# Function to list all regular users
+function list_users {
+    cut -d: -f1,3 /etc/passwd | awk -F: '$2 >= 1000 && $2 < 60000 {print $1}'
+}
+
+# Function to list users with sudo permissions
+function list_sudo_users {
+    getent group sudo | cut -d: -f4 | tr ',' '\n'
+}
+
+# Main script logic
+case "$1" in
+    --help)
+        display_help
+        ;;
+    --version)
+        echo "internsctl $VERSION"
+        ;;
+    cpu)
+        shift
+        case "$1" in
+            getinfo)
+                # Existing CPU information logic
+                ;;
+            *)
+                echo "Error: Unknown CPU subcommand. Use 'internsctl cpu getinfo' for CPU information."
+                exit 1
+                ;;
+        esac
+        ;;
+    memory)
+        shift
+        case "$1" in
+            getinfo)
+                # Existing memory information logic
+                ;;
+            *)
+                echo "Error: Unknown memory subcommand. Use 'internsctl memory getinfo' for memory information."
+                exit 1
+                ;;
+        esac
+        ;;
+    user)
+        shift
+        case "$1" in
+            create)
+                shift
+                create_user "$@"
+                ;;
+            list)
+                shift
+                if [ "$1" == "--sudo-only" ]; then
+                    list_sudo_users
+                else
+                    list_users
+                fi
+                ;;
+            *)
+                echo "Error: Unknown user subcommand. Use 'internsctl user create <username>' or 'internsctl user list' for user management."
+                exit 1
+                ;;
+        esac
+        ;;
+    *)
+        echo "Error: Unknown option. Use 'internsctl --help' for usage information."
+        exit 1
+        ;;
+esac
+
+exit 0
